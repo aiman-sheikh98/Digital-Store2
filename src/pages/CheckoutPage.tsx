@@ -182,7 +182,10 @@ const CheckoutPage = () => {
                       onClick={() => {
                         // Simulate form validation
                         // In a real application, validate the form
-                        document.querySelector('[data-value="payment"]')?.click();
+                        const paymentTab = document.querySelector('[data-value="payment"]') as HTMLElement;
+                        if (paymentTab) {
+                          paymentTab.click();
+                        }
                       }}
                       className="w-full bg-brand-blue hover:bg-brand-dark"
                     >
