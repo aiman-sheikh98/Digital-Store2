@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Search, User, Menu, X } from "lucide-react";
+import { ShoppingCart, Search, User, Home, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -33,7 +33,19 @@ const Header = () => {
             DigitalStore
           </Link>
 
-          {/* Navigation and Cart */}
+          {/* Navigation */}
+          <nav className="flex items-center space-x-4">
+            <Link to="/" className="flex items-center space-x-1 hover:text-brand-blue">
+              <Home size={20} />
+              <span className="hidden md:inline">Home</span>
+            </Link>
+            <Link to="/products" className="flex items-center space-x-1 hover:text-brand-blue">
+              <Package size={20} />
+              <span className="hidden md:inline">Products</span>
+            </Link>
+          </nav>
+
+          {/* Cart and User Section */}
           <div className="flex items-center space-x-4">
             {/* Cart Button */}
             <Link to="/cart" className="relative">
@@ -67,4 +79,3 @@ const Header = () => {
 };
 
 export default Header;
-
