@@ -1,22 +1,28 @@
 # Welcome to My Digita-store project
 
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
 ## Project info
 
-**URL**: https://lovable.dev/projects/c8e0e1ec-3591-4d63-9017-d0c6a6c35cd1
+* Added a navigation section with links to Home and Products
+* Used Lucide icons (Home and Package) for the navigation links
+* Made the text labels hidden on smaller screens to improve mobile responsiveness
+* Kept the existing cart and user authentication sections unchanged
+* Added hover effects to the navigation links
 
-## How can I edit this code?
 
-There are several ways of editing your application.
+There are several ways of editing this code
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/c8e0e1ec-3591-4d63-9017-d0c6a6c35cd1) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected .
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -52,19 +58,13 @@ npm run dev
 
 ## What technologies are used for this project?
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/c8e0e1ec-3591-4d63-9017-d0c6a6c35cd1) and click on Share -> Publish.
+https://swift-cart-pilot.lovable.app/ and click 
 
-## Can I connect a custom domain to my Lovable project?
+## Can I connect a custom domain to  project?
 
 Yes, you can!
 
