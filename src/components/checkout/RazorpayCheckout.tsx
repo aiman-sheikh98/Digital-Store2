@@ -18,10 +18,15 @@ declare global {
 }
 
 const loadRazorpayScript = () => {
-  return new Promise<void>((resolve) => {
+  return new Promise<void>((resolve, reject) => {
+    if (document.querySelector("script[src='https://checkout.razorpay.com/v1/checkout.js']")) {
+      resolve();
+      return;
+    }
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.onload = () => resolve();
+    script.onerror = () => reject("Failed to load Razorpay SDK");
     document.body.appendChild(script);
   });
 };
@@ -29,31 +34,49 @@ const loadRazorpayScript = () => {
 const RazorpayCheckout = ({ total, onSuccess }: RazorpayCheckoutProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const { clearCart } = useCart();
+  const { clearCart, cartItems } = useCart();
   const { pushNotification } = useNotifications();
 
   const handlePayment = async () => {
     setIsLoading(true);
-
     try {
-      // Load Razorpay script if not loaded already
+      // 1. Load Razorpay SDK if needed.
       if (!window.Razorpay) {
         await loadRazorpayScript();
       }
 
-      // In a real implementation, this would call your backend API to create an order
-      // Here we're simulating the API response with a Promise
-      const orderData = await createOrder(total);
+      // 2. Call backend API to create the real order
+      const orderRes = await fetch("/api/create-razorpay-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          amount: total * 100, // INR - in paise
+          currency: "INR",
+          // Optional: pass order/cart details
+          user: {
+            name: user?.name || "",
+            email: user?.email || "",
+            id: user?.id || "",
+          },
+          cart: cartItems.map(item => ({
+            productId: item.product.id,
+            quantity: item.quantity,
+            price: item.product.price
+          }))
+        }),
+      });
+      if (!orderRes.ok) throw new Error("Failed to create order");
+      const orderData = await orderRes.json();
 
-      // Create order options
+      // 3. Prepare Razorpay options using backend order response
       const options = {
-        key: "rzp_test_YourTestKey", // Replace with your Razorpay test key
-        amount: total * 100, // Amount in smallest currency unit (paise for INR)
-        currency: "INR",
+        key: orderData.key_id, // Your public key from backend for extra security
+        amount: orderData.amount, // should come from backend (paise)
+        currency: orderData.currency,
         name: "DigitalStore",
         description: "Purchase of digital products",
-        order_id: orderData.id, // This would come from your backend in a real implementation
-        image: "https://i.imgur.com/QdR9ysT.png", 
+        image: "https://i.imgur.com/QdR9ysT.png",
+        order_id: orderData.id,
         prefill: {
           name: user?.name || "",
           email: user?.email || "",
@@ -61,37 +84,40 @@ const RazorpayCheckout = ({ total, onSuccess }: RazorpayCheckoutProps) => {
         theme: {
           color: "#2563eb",
         },
-        handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
-          // In a real implementation, you would verify this payment on your backend
-          verifyPayment(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature)
-            .then(() => {
-              // Handle payment success
-              onSuccess(response.razorpay_payment_id);
-              clearCart();
+        handler: async function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
+          // 4. Verify signature with backend
+          const verifyRes = await fetch("/api/verify-razorpay-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              // Optionally send user, cart details
+            }),
+          });
+          if (verifyRes.ok) {
+            onSuccess(response.razorpay_payment_id);
+            clearCart();
 
-              // Show success toast and notification
-              toast({
-                title: "Payment successful!",
-                description: `Your payment was processed successfully. Order ID: ${response.razorpay_order_id}`,
-              });
-
-              pushNotification({
-                title: "Payment successful",
-                message: `Your order has been placed and payment processed. Order ID: ${response.razorpay_order_id.substring(0, 8)}...`,
-                type: "success",
-              });
-            })
-            .catch(error => {
-              console.error("Payment verification failed:", error);
-              toast({
-                title: "Payment verification failed",
-                description: "There was an error verifying your payment. Please contact support.",
-                variant: "destructive",
-              });
-            })
-            .finally(() => {
-              setIsLoading(false);
+            // Show success toast and notification
+            toast({
+              title: "Payment successful!",
+              description: `Your payment was processed successfully. Order ID: ${response.razorpay_order_id}`,
             });
+            pushNotification({
+              title: "Payment successful",
+              message: `Your order has been placed and payment processed. Order ID: ${response.razorpay_order_id.substring(0, 8)}...`,
+              type: "success",
+            });
+          } else {
+            toast({
+              title: "Payment verification failed",
+              description: "There was an error verifying your payment. Please contact support.",
+              variant: "destructive",
+            });
+          }
+          setIsLoading(false);
         },
         modal: {
           ondismiss: function () {
@@ -105,9 +131,10 @@ const RazorpayCheckout = ({ total, onSuccess }: RazorpayCheckoutProps) => {
         },
       };
 
-      // Open Razorpay checkout
+      // 5. Open the Razorpay payment modal
       const razorpay = new window.Razorpay(options);
       razorpay.open();
+
     } catch (error) {
       console.error("Razorpay error:", error);
       toast({
@@ -117,26 +144,6 @@ const RazorpayCheckout = ({ total, onSuccess }: RazorpayCheckoutProps) => {
       });
       setIsLoading(false);
     }
-  };
-
-  // Simulated API call to create an order - in a real implementation, this would be a fetch to your backend
-  const createOrder = async (amount: number): Promise<{ id: string }> => {
-    // Simulate API call delay
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ id: `order_${Date.now()}` });
-      }, 500);
-    });
-  };
-
-  // Simulated API call to verify payment - in a real implementation, this would be a fetch to your backend
-  const verifyPayment = async (paymentId: string, orderId: string, signature: string): Promise<boolean> => {
-    // Simulate API call delay
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 500);
-    });
   };
 
   return (
