@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -50,17 +49,6 @@ const CheckoutPage = () => {
         paymentId
       } 
     });
-  };
-
-  const handleTestCheckout = () => {
-    // Simulate successful payment
-    pushNotification({
-      title: "Test payment successful",
-      message: "This is a test payment. In a real application, you would be redirected to the payment gateway.",
-      type: "info"
-    });
-    
-    handleCheckoutSuccess(`TEST-${Math.floor(Math.random() * 100000)}`);
   };
 
   if (cartItems.length === 0) {
@@ -209,35 +197,12 @@ const CheckoutPage = () => {
                           <line x1="2" y1="10" x2="22" y2="10" />
                         </svg>
                       </div>
-                      <div className="text-lg font-medium">Pay with Razorpay</div>
+                      <div className="text-lg font-medium">Secure Online Payment</div>
                     </div>
                     <p className="text-gray-600 mb-4">
-                      You will be redirected to Razorpay's secure payment page to complete your purchase.
+                      You will be redirected to our secure payment gateway to complete your purchase.
                     </p>
                     <RazorpayCheckout total={subtotal} onSuccess={handleCheckoutSuccess} />
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center mb-4">
-                      <div className="h-10 w-14 bg-gray-200 rounded flex items-center justify-center mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="8" x2="12" y2="16" />
-                          <line x1="8" y1="12" x2="16" y2="12" />
-                        </svg>
-                      </div>
-                      <div className="text-lg font-medium">Test Payment (Demo Only)</div>
-                    </div>
-                    <p className="text-gray-600 mb-4">
-                      This is a test payment option for demonstration purposes only.
-                    </p>
-                    <Button 
-                      onClick={handleTestCheckout} 
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Complete Test Payment
-                    </Button>
                   </div>
                 </div>
               </Card>

@@ -41,14 +41,18 @@ const RazorpayCheckout = ({ total, onSuccess }: RazorpayCheckoutProps) => {
         await loadRazorpayScript();
       }
 
+      // In a real implementation, this would call your backend API to create an order
+      // Here we're simulating the API response with a Promise
+      const orderData = await createOrder(total);
+
       // Create order options
-      // In a real implementation, you would call your backend to create an order
       const options = {
         key: "rzp_test_YourTestKey", // Replace with your Razorpay test key
-        amount: total * 100, // Amount in paise
+        amount: total * 100, // Amount in smallest currency unit (paise for INR)
         currency: "INR",
         name: "DigitalStore",
         description: "Purchase of digital products",
+        order_id: orderData.id, // This would come from your backend in a real implementation
         image: "https://i.imgur.com/QdR9ysT.png", 
         prefill: {
           name: user?.name || "",
@@ -57,23 +61,37 @@ const RazorpayCheckout = ({ total, onSuccess }: RazorpayCheckoutProps) => {
         theme: {
           color: "#2563eb",
         },
-        handler: function (response: { razorpay_payment_id: string }) {
-          // Handle payment success
-          const paymentId = response.razorpay_payment_id;
-          onSuccess(paymentId);
-          clearCart();
+        handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
+          // In a real implementation, you would verify this payment on your backend
+          verifyPayment(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature)
+            .then(() => {
+              // Handle payment success
+              onSuccess(response.razorpay_payment_id);
+              clearCart();
 
-          // Show success toast and notification
-          toast({
-            title: "Payment successful!",
-            description: `Your payment was processed successfully. Order ID: ${paymentId}`,
-          });
+              // Show success toast and notification
+              toast({
+                title: "Payment successful!",
+                description: `Your payment was processed successfully. Order ID: ${response.razorpay_order_id}`,
+              });
 
-          pushNotification({
-            title: "Payment successful",
-            message: `Your order has been placed and payment processed. Order ID: ${paymentId.substring(0, 8)}...`,
-            type: "success",
-          });
+              pushNotification({
+                title: "Payment successful",
+                message: `Your order has been placed and payment processed. Order ID: ${response.razorpay_order_id.substring(0, 8)}...`,
+                type: "success",
+              });
+            })
+            .catch(error => {
+              console.error("Payment verification failed:", error);
+              toast({
+                title: "Payment verification failed",
+                description: "There was an error verifying your payment. Please contact support.",
+                variant: "destructive",
+              });
+            })
+            .finally(() => {
+              setIsLoading(false);
+            });
         },
         modal: {
           ondismiss: function () {
@@ -97,9 +115,28 @@ const RazorpayCheckout = ({ total, onSuccess }: RazorpayCheckoutProps) => {
         description: "There was an error processing your payment. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
+  };
+
+  // Simulated API call to create an order - in a real implementation, this would be a fetch to your backend
+  const createOrder = async (amount: number): Promise<{ id: string }> => {
+    // Simulate API call delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ id: `order_${Date.now()}` });
+      }, 500);
+    });
+  };
+
+  // Simulated API call to verify payment - in a real implementation, this would be a fetch to your backend
+  const verifyPayment = async (paymentId: string, orderId: string, signature: string): Promise<boolean> => {
+    // Simulate API call delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(true);
+      }, 500);
+    });
   };
 
   return (
